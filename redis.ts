@@ -4,7 +4,7 @@ import { Player } from ".";
 let client: RedisClientType
 const connect = async () => {
   client = createClient({
-    url: process.env.REDIS_URL
+    url: process.env.REDISCLOUD_URL
   });
   await client.connect();
   return client
