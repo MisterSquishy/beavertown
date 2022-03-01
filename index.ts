@@ -46,7 +46,7 @@ setTimeout(async () => {
     const newPlayers = players.filter(player => !previousPlayers.find(prevPlayer => player.id === prevPlayer.id));
     const leftPlayers = previousPlayers.filter(prevPlayer => !players.find(player => player.id === prevPlayer.id));
     console.log({ newPlayers, leftPlayers })
-    if (newPlayers.length > 0) {
+    if (newPlayers.length > 0 || leftPlayers.length > 0) {
       await postMessage(newPlayers, leftPlayers);
     }
   } catch(e) {
