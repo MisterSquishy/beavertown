@@ -82,4 +82,9 @@ app.shortcut('check_the_gather', async ({ shortcut, ack, client }) => {
       }
     ]
   })
-})
+});
+
+(async () => {
+  await app.start(process.env.PORT || 3000);
+  console.log('⚡️ Bolt app is running!');
+})();
