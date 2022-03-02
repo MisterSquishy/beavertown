@@ -1,7 +1,12 @@
-import { Player } from ".";
+import { Player } from "@gathertown/gather-game-client";
+import { App } from "@slack/bolt";
 import { ChatPostMessageArguments, WebClient } from "@slack/web-api";
 
 const client = new WebClient(process.env.SLACK_BOT_TOKEN);
+export const app = new App({
+  token: process.env.SLACK_BOT_TOKEN,
+  signingSecret: process.env.SLACK_SIGNING_SECRET
+});
 
 const hype = [
   "it's lit af",
@@ -11,21 +16,45 @@ const hype = [
   "everyone's talking about it",
   "don't get fomo",
   "go nuts",
-  "the team needs u",
-  "🦫🦫🦫",
-  "let's fucking go"
+  "let's fucking go",
+  "we're all waiting for YOU",
+  "it's not a party w/o u",
 ]
 const getHype = (): string => {
   return hype[Math.min(Math.floor(Math.random() * hype.length), hype.length - 1)]
 }
 
-export const postMessage = async (newPlayers: Player[], leftPlayers: Player[]) => {
+const keepinItPositive = [
+  "the team needs u",
+  "the party's still goin strong",
+  "keep the party going",
+  "that means there's more space for YOU",
+  "in case you were waiting for them to leave, now's the time",
+]
+const getKeepinItPositive = (): string => {
+  return keepinItPositive[Math.min(Math.floor(Math.random() * keepinItPositive.length), keepinItPositive.length - 1)]
+}
+
+const resurrect = [
+  "get a party started",
+  "be the change you want to see",
+  "its only empty until you join",
+  "make them regret leaving",
+]
+const getResurrect = (): string => {
+  return resurrect[Math.min(Math.floor(Math.random() * resurrect.length), resurrect.length - 1)]
+}
+
+export const postMessage = async (newPlayers: Player[], leftPlayers: Player[], allPlayers: Player[]) => {
+  const allPlayerNames = allPlayers.map(player => player.name).join(", ")
+  const isLit = newPlayers.length > 0
+  const isDyin = leftPlayers.length > 0 && allPlayers.length > 0
   const blocks = [
     {
       type: "header",
       text: {
         type: "plain_text",
-        text: `beavertown poppin off`,
+        text: `beavertown ${newPlayers.length > 0 ? 'poppin off' : 'winding down'}`,
       }
     },
   ];
@@ -35,7 +64,7 @@ export const postMessage = async (newPlayers: Player[], leftPlayers: Player[]) =
       type: "section",
       text: {
         type: "mrkdwn",
-        text: newPlayers.map(player => player.name).join(", ") + " just joined",
+        text: newPlayers.map(player => player.name).join(", ") + (allPlayers.length > 1 ? " joined " + allPlayerNames : " is holdin it down all by them self"),
       }
     });
   }
@@ -45,7 +74,7 @@ export const postMessage = async (newPlayers: Player[], leftPlayers: Player[]) =
       type: "section",
       text: {
         type: "mrkdwn",
-        text: leftPlayers.map(player => player.name).join(", ") + " dipped",
+        text: leftPlayers.map(player => player.name).join(", ") + " dipped" + (allPlayers.length > 0 ? ", but " + allPlayerNames + " still holdin it down" : ""),
       }
     });
   }
@@ -54,7 +83,7 @@ export const postMessage = async (newPlayers: Player[], leftPlayers: Player[]) =
     type: "section",
     text: {
       type: "mrkdwn",
-      text: `${getHype()}, <https://app.gather.town/app/PQR3oEaLR3HhjuWh/stunning-beaver|roll thru>`,
+      text: `${isLit ? getHype() : isDyin ? getKeepinItPositive() : getResurrect()}, <https://app.gather.town/app/PQR3oEaLR3HhjuWh/stunning-beaver|roll thru>`,
     }
   });
 

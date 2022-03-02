@@ -3,55 +3,83 @@ config();
 import { Game } from "@gathertown/gather-game-client";
 import websocket from "isomorphic-ws"
 import { exit } from "process";
-import { fetchPlayers, savePlayers } from "./redis";
-import { postMessage } from "./slack"
-
-export interface Player {
-  id: string;
-  name: string;
-  activelySpeaking: boolean;
-}
+import { app, postMessage } from "./slack"
 
 // @ts-ignore
 global.WebSocket = websocket;
 
 const game = new Game(process.env.GATHERTOWN_SPACE_ID, () => Promise.resolve({ apiKey: process.env.GATHERTOWN_API_KEY || "" }));
 game.connect();
+game.subscribeToAll();
 game.subscribeToConnection((connected) => {
   if (!connected) {
-    console.error("failed to connect")
-  };
-});
-
-// for some reason this causes playerMoves to be sent twice for each player(?)
-// only the second one has their name/other data
-game.subscribeToAll();
-
-const players: Player[] = []
-game.subscribeToEvent("playerMoves", (data, context) => {
-  if (context.player?.name) {
-    players.push({
-      id: context.playerId ?? context.player.name,
-      name: context.player.name,
-      activelySpeaking: !!context.player.activelySpeaking,
-    })
+    console.error("failed to connect");
+    exit(1);
+  } else {
+    console.log("connected!!!")
   }
 });
 
-// wait a bit for all the socket events to come through to make sure we got the whole krew
-setTimeout(async () => {
-  try {
-    const previousPlayers = await fetchPlayers();
-    await savePlayers(players);
-    const newPlayers = players.filter(player => !previousPlayers.find(prevPlayer => player.id === prevPlayer.id));
-    const leftPlayers = previousPlayers.filter(prevPlayer => !players.find(player => player.id === prevPlayer.id));
-    console.log({ newPlayers, leftPlayers })
-    if (newPlayers.length > 0 || leftPlayers.length > 0) {
-      await postMessage(newPlayers, leftPlayers);
+game.subscribeToEvent("playerJoins", (data, context) => {
+  setTimeout(() => {
+    // for some reason the name isn't retrievable until l8r
+    const joiner = game.getPlayer(context?.playerId ?? "")
+    if (!joiner) {
+      console.error('who the fuck joined', { data, context })
+      return
     }
-  } catch(e) {
-    console.error(e);
-  } finally {
-    exit()
-  }
-}, 10000);
+    postMessage([ joiner ], [], Object.values(game.players))
+  }, 1000);
+});
+
+game.subscribeToEvent("playerExits", (data, context) => {
+  setTimeout(() => {
+    // for some reason the name isn't retrievable until l8r
+    const leaver = game.getPlayer(context?.playerId ?? "")
+    if (!leaver) {
+      console.error('who the fuck left', { data, context })
+      return
+    }
+    postMessage([], [ leaver ], Object.values(game.players))
+  }, 1000);
+});
+
+app.shortcut('check_the_gather', async ({ shortcut, ack, client }) => {
+  console.log(`${shortcut.user.username} CHECKED GATHER`)
+  ack();
+  await client.chat.postEphemeral({
+    channel: process.env.SLACK_CHANNEL_ID ?? "",
+    user: shortcut.user.id,
+    text: `${Object.keys(game.players).length} ${Object.keys(game.players).length === 1 ? "person" : "ppl"} are in da gather`,
+    blocks: [
+      {
+        type: "header",
+        text: {
+          type: "plain_text",
+          text: `beavertown got ${Object.keys(game.players).length} ${Object.keys(game.players).length === 1 ? "person" : "ppl"}`,
+        }
+      },
+      ...Object.values(game.players).map(player => {
+        const whatPlayerIsUpTo = player.activelySpeaking ? " talking abt something" :
+          player.busy ? " but they busy" :
+          !!player.currentArea ? ` in ${player.currentArea}` :
+          player.isAlone ? " all alone" :
+          " going fucking bananas"
+        return {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `${player.name} is here, ${whatPlayerIsUpTo}`,
+          }
+        }
+      }),
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: '<https://app.gather.town/app/PQR3oEaLR3HhjuWh/stunning-beaver|roll thru>',
+        }
+      }
+    ]
+  })
+})
