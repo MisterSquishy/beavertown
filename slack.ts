@@ -45,7 +45,7 @@ const getResurrect = (): string => {
   return resurrect[Math.min(Math.floor(Math.random() * resurrect.length), resurrect.length - 1)]
 }
 
-export const postMessage = async (newPlayers: Player[], leftPlayers: Player[], allPlayers: Player[]) => {
+export const postMessage = async (newPlayers: Player[], leftPlayers: Partial<Player>[], allPlayers: Player[]) => {
   const allPlayerNames = allPlayers.map(player => player.name).join(", ")
   const isLit = newPlayers.length > 0
   const isDyin = leftPlayers.length > 0 && allPlayers.length > 0

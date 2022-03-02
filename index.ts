@@ -33,15 +33,12 @@ game.subscribeToEvent("playerJoins", (data, context) => {
 });
 
 game.subscribeToEvent("playerExits", (data, context) => {
-  setTimeout(() => {
-    // for some reason the name isn't retrievable until l8r
-    const leaver = game.getPlayer(context?.playerId ?? "")
-    if (!leaver) {
-      console.error('who the fuck left', { data, context })
-      return
-    }
-    postMessage([], [ leaver ], Object.values(game.players))
-  }, 1000);
+  const leaver = context.player
+  if (!leaver) {
+    console.error('who the fuck left', { data, context })
+    return
+  }
+  postMessage([], [ leaver ], Object.values(game.players))
 });
 
 app.shortcut('check_the_gather', async ({ shortcut, ack, client }) => {
