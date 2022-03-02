@@ -5,7 +5,8 @@ import { ChatPostMessageArguments, WebClient } from "@slack/web-api";
 const client = new WebClient(process.env.SLACK_BOT_TOKEN);
 export const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  port: 3000,
 });
 
 const hype = [
