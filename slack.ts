@@ -1,6 +1,7 @@
 import { Player } from "@gathertown/gather-game-client";
 import { App } from "@slack/bolt";
 import { ChatPostMessageArguments, WebClient } from "@slack/web-api";
+import { joinWithAnd } from "./util";
 
 const client = new WebClient(process.env.SLACK_BOT_TOKEN);
 export const app = new App({
@@ -46,7 +47,15 @@ const getResurrect = (): string => {
 }
 
 export const postMessage = async (newPlayers: Player[], leftPlayers: Partial<Player>[], allPlayers: Player[]) => {
-  const allPlayerNames = allPlayers.map(player => player.name).join(", ")
+  const allPlayerNamesWithoutChanged = joinWithAnd(
+    allPlayers
+      .filter(player => !newPlayers
+        .find(newPlayer => player.name === newPlayer.name)
+      )
+      .filter(player => !leftPlayers
+        .find(leftPlayer => player.name === leftPlayer.name)
+      ).map(player => player.name)
+  )
   const isLit = newPlayers.length > 0
   const isDyin = leftPlayers.length > 0 && allPlayers.length > 0
   const blocks = [
@@ -64,7 +73,7 @@ export const postMessage = async (newPlayers: Player[], leftPlayers: Partial<Pla
       type: "section",
       text: {
         type: "mrkdwn",
-        text: newPlayers.map(player => player.name).join(", ") + (allPlayers.length > 1 ? " joined " + allPlayerNames : " is holdin it down all by them self"),
+        text: joinWithAnd(newPlayers.map(player => player.name)) + (allPlayers.length > 1 ? " joined " + allPlayerNamesWithoutChanged : " is holdin it down all by them self"),
       }
     });
   }
@@ -74,7 +83,7 @@ export const postMessage = async (newPlayers: Player[], leftPlayers: Partial<Pla
       type: "section",
       text: {
         type: "mrkdwn",
-        text: leftPlayers.map(player => player.name).join(", ") + " dipped" + (allPlayers.length > 0 ? ", but " + allPlayerNames + " still holdin it down" : ""),
+        text: joinWithAnd(leftPlayers.map(player => player.name)) + " dipped" + (allPlayers.length > 0 ? ", but " + allPlayerNamesWithoutChanged + " still holdin it down" : ""),
       }
     });
   }
