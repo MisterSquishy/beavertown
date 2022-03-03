@@ -57,11 +57,15 @@ app.shortcut('check_the_gather', async ({ shortcut, ack, client }) => {
         }
       },
       ...Object.values(game.players).map(player => {
-        const whatPlayerIsUpTo = player.activelySpeaking ? " talking abt something" :
-          player.busy ? " but they busy" :
-          !!player.currentArea ? ` in ${player.currentArea}` :
-          player.isAlone ? " all alone" :
-          " going fucking bananas"
+        const whatPlayerIsUpTo = player.activelySpeaking ? "talking abt something" :
+          player.busy ? "but they busy" :
+          player.goKartId.length > 0 ? "kartin like a fiend" :
+          player.textStatus.length > 0 ? `saying _${player.textStatus}_` :
+          player.currentDesk.length > 0 ? "gettin some desk time in" :
+          player.openToConversation ? "and they lookin to chat" :
+          !!player.currentArea ? `in ${player.currentArea}` :
+          player.isAlone ? "all alone" :
+          "going fucking bananas"
         return {
           type: "section",
           text: {
