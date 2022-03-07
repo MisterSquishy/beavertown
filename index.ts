@@ -14,7 +14,7 @@ game.subscribeToAll();
 game.subscribeToConnection((connected) => {
   if (!connected) {
     console.error("failed to connect");
-    exit(1);
+    game.connect();
   } else {
     console.log("connected!!!")
   }
