@@ -1,0 +1,15 @@
+name: Handle new issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  handleIssue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close Issue
+        uses: peter-evans/close-issue@v2
+        with:
+          comment: |
+            Will not fix.
