@@ -2,10 +2,10 @@ name: Handle new issue
 
 on:
   issues:
-    types: [opened]
+    types: [opened,reopened]
 
 jobs:
-  handleIssue:
+  handle_issue:
     runs-on: ubuntu-latest
     steps:
       - name: Close Issue
